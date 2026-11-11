@@ -1,13 +1,15 @@
 ---
 title: 第一篇学业笔记
-description: 一篇带封面、正文和代码的示例，方便试用发文流程。
 date: 2026-11-11
 category: 学业笔记
-tags: [示例, Python]
+tags:
+  - 示例
+  - Python
+description: 一篇带封面、正文和代码的示例，方便试用发文流程。
 cover: /media/edinburgh.jpg
-featured: true
+featured: false
+draft: false
 ---
-
 ## 从一个小例子开始
 
 写笔记时，可以先记录问题，再用一小段代码验证自己的理解。
