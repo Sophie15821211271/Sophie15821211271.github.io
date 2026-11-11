@@ -1,37 +1,42 @@
 ---
-title: "境观：把 STM32 环境监测终端接进浏览器"
-description: "从 PuTTY 里的一句 PONG，到能够读数据、查报警和改阈值的网页控制台。"
+title: 境观：把 STM32 环境监测终端接进浏览器
 date: 2026-11-11
 category: 项目
-tags: [STM32, HC-05, Web Serial, 电工实习]
+tags:
+  - STM32
+  - HC-05
+  - Web Serial
+  - 电工实习
+description: 从 PuTTY 里的一句 PONG，到能够读数据、查报警和改阈值的网页控制台。
 cover: /media/jingguan/dashboard.png
+featured: true
+draft: false
 ---
-
 电工实习里，我们做了一个叫「境观」的环境监测与报警终端。STM32 读取温度、湿度、光照和烟雾，现场可以通过 OLED、指示灯和蜂鸣器查看状态。队友先完成了采集、显示和报警的基础固件。我接手后主要做了 **HC-05 串口通信、设备命令与网页控制台**，让电脑也能查看同一套数据，并读取和调整设备上的报警阈值。
 
 ## 从 PING / PONG 开始
 
 第一次联调，我先用 PuTTY 确认通信。电脑和 HC-05 配对后，打开对应蓝牙串口，发送 `PING`，看到板子返回 `PONG`，再开始排查读数和阈值。一开始设备不断主动输出，终端里自己的输入和板子的消息混在一起。后来网页改为按需发送查询，设备回一批数据，界面才更新。这样每次操作都能在日志里找到对应的请求与回复。
 
-~~~text
+```text
 DHT11 / BH1750 / MQ-2 → STM32 → HC-05 → 电脑蓝牙串口 → 浏览器
                                          ↑ 网页查询、读取阈值、提交设置
-~~~
+```
 
 下面是实习中早期蓝牙模块的握手分支。它只确认命令到达、回复能返回，不代表传感器和整套协议已经联调完成。
 
-~~~c
+```c
 if (strcmp(command, "PING") == 0) {
     SendText("PONG\r\n");
     return;
 }
-~~~
+```
 
 ## 把串口接到网页
 
 HC-05 走经典蓝牙串口。电脑先在系统里配对，网页再通过 **Web Serial** 请求访问对应串口。下面节选控制台的初始化流程，省去了界面状态、异常处理和读取循环。
 
-~~~js
+```js
 port = await navigator.serial.requestPort();
 await port.open({
   baudRate: 9600,
@@ -42,7 +47,7 @@ await port.open({
 });
 writer = port.writable.getWriter();
 reader = port.readable.getReader();
-~~~
+```
 
 连接后的顺序是先握手，再读取阈值和数据。控制台把请求排队，收到的字节先累积到缓冲区，再按换行拆成完整消息，避免把半行回复当成一条完整数据。默认开启约每秒查询一次，也可以关闭自动刷新后手动读取。
 
@@ -56,14 +61,14 @@ reader = port.readable.getReader();
 
 网页里的输入框只代表想提交的设置。保存后要等设备确认，再用 `GET,LIMIT` 回读。蓝色区单独显示设备返回的生效值。下面是网页读取阈值的字段映射，三个分组和界面上的设置项一一对应。
 
-~~~js
+```js
 const values = parseValues(await command("GET,LIMIT", "limits"));
 const mapping = {
   TEMP: ["Temperature warning", "Temperature alarm"],
   HUMI: ["Humidity warning", "Humidity alarm"],
   FIRE: ["Fire light", "Fire smoke ADC"]
 };
-~~~
+```
 
 ![境观阈值设置页，展示温度、湿度及光照和烟雾的联合设置](/media/jingguan/thresholds.png)
 
