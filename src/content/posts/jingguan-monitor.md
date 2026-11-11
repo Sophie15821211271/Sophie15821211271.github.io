@@ -10,7 +10,7 @@ tags:
 description: 从 PuTTY 里的一句 PONG，到能够读数据、查报警和改阈值的网页控制台。
 cover: /media/bridge-dusk-1.jpg
 featured: true
-draft: false
+draft: true
 ---
 电工实习里，我们做了一个叫「境观」的环境监测与报警终端。STM32 读取温度、湿度、光照和烟雾，现场可以通过 OLED、指示灯和蜂鸣器查看状态。队友先完成了采集、显示和报警的基础固件。我接手后主要做了 **HC-05 串口通信、设备命令与网页控制台**，让电脑也能查看同一套数据，并读取和调整设备上的报警阈值。
 
