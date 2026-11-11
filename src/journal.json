@@ -1,10 +1,40 @@
 {
-  "projects": [{"title":"境观 · 智能环境监测与报警终端","description":"电工实习项目。用 HC-05 串口通信把 STM32 的传感器数据、报警原因和阈值设置接进浏览器。","date":"2026-11-11","url":"/posts/jingguan-monitor/","cover":"/media/jingguan/dashboard.png"}],
-  "moments": [
-    {"title":"给笔记留个地方","description":"把零散的学习记录慢慢整理起来。","date":"2026-11-11"},
-    {"title":"示例 · 做完一个小实验","description":"把步骤和结果都记下来，下次遇到相似的问题就有地方可查。","date":"2026-11-10"},
-    {"title":"示例 · 留一点空白","description":"今天的笔记到这里，明天再补上读书时想到的问题。","date":"2026-11-09"}
+  "projects": [
+    {
+      "title": "境观 · 智能环境监测与报警终端",
+      "description": "电工实习项目。用 HC-05 串口通信把 STM32 的传感器数据、报警原因和阈值设置接进浏览器。",
+      "date": "2026-11-11",
+      "url": "/posts/jingguan-monitor/",
+      "cover": "/media/jingguan/dashboard.png"
+    }
   ],
-  "albums": [{"title":"封面画册","description":"城市暮色、山脉和海岸。","images":["/media/edinburgh.jpg","/media/dolomites.jpg","/media/bridge-dusk.jpg","/media/coast.jpg"]}],
-  "friends": []
+  "moments": [
+    {
+      "title": "第一个Blog，第一条说说。",
+      "description": "灵魂的渴望是命运的先知。\nThe desire of her soul is the prophecy of her fate.",
+      "date": "2026-11-11"
+    },
+    {
+      "title": "To未来的我",
+      "description": "所有未来与你有关的人和事都在等你渡过这一关",
+      "date": "2026-11-12"
+    },
+    {
+      "title": "留一点空白",
+      "description": "风在唱 云在晃 听一首好时光",
+      "date": "2026-11-12"
+    }
+  ],
+  "albums": [
+    {
+      "title": "封面画册",
+      "description": "城市暮色、山脉和海岸。",
+      "images": [
+        "/media/edinburgh.jpg",
+        "/media/dolomites.jpg",
+        "/media/bridge-dusk.jpg",
+        "/media/coast.jpg"
+      ]
+    }
+  ]
 }
