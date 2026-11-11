@@ -1,0 +1,11 @@
+name = "sophie-blog-visits"
+main = "worker.mjs"
+compatibility_date = "2026-11-11"
+
+[vars]
+SITE_ORIGIN = "https://sophie15821211271.github.io"
+
+[[d1_databases]]
+binding = "VISITS"
+database_name = "sophie-blog-visits"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"

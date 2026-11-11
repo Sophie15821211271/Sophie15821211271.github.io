@@ -1,0 +1,81 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../layouts/Layout.astro";
+import site from "../site.json";
+import journal from "../journal.json";
+import PostCard from "../components/PostCard.astro";
+import NavIcon from "../components/NavIcon.astro";
+const posts = (await getCollection("posts", ({data}) => !data.draft))
+  .sort((a,b) => b.data.date.getTime() - a.data.date.getTime());
+const featured = posts.find(post => post.data.featured) ?? posts[0];
+const categories = [...new Set(posts.map(post => post.data.category))];
+const tags = [...new Set(posts.flatMap(post => post.data.tags))];
+const songId = /^\d+$/.test(site.songId || "") ? site.songId : "";
+const categoryCount = (category: string) => posts.filter(post => post.data.category === category).length;
+const stats = [["文章", posts.length], ["分类", categories.length], ["标签", tags.length], ["说说", journal.moments.length], ["访客", null]] as const;
+const streams = [
+  {title:"正在构建", english:"Selected work", path:"projects", label:"查看项目", items:journal.projects},
+  {title:"片刻记录", english:"Recent moments", path:"moments", label:"全部说说", items:journal.moments}
+];
+---
+<Layout home>
+  <section class:list={["hero", {"hero-film": site.background === "/media/la-la-land-night.jpg"}]}>
+    {site.background && <img class="hero-image" src={site.background} alt="" fetchpriority="high" />}
+    <div class="wrap hero-copy">
+      <h1>{site.title}</h1>
+      <p>{site.description}</p>
+      <a class="pill" href="/posts/">READ JOURNAL <span aria-hidden="true">↘</span></a>
+    </div>
+  </section>
+  <nav class="wrap topic-bar" aria-label="文章主题">
+    <a class="topic-home" href="/" aria-label="首页" aria-current="page"><NavIcon name="首页" /></a>
+    {categories.map(category => <a href={`/posts/?category=${encodeURIComponent(category)}`}><NavIcon name="分类" />{category} <small>{categoryCount(category)}</small></a>)}
+    {tags.map(tag => <a href={`/posts/?tag=${encodeURIComponent(tag)}`}><NavIcon name="标签" />{tag}</a>)}
+    <a class="all-topics" href="/topics/"><NavIcon name="标签" />全部主题 →</a>
+  </nav>
+  <div class="wrap content">
+    <aside class="left-sidebar"><section class="profile panel" id="about">
+      <div class="portrait">{site.avatar ? <img src={site.avatar} alt={site.name + "的头像"} /> : <div class="avatar" aria-hidden="true">{site.name.slice(0,1)}</div>}</div>
+      <h2>{site.name}</h2><p class="signature">{site.signature}</p>
+      <div class="music-card"><span class="music-icon" aria-hidden="true">♫</span><div><strong>好好睡觉好好吃饭</strong><small>萧泽 · 网易云音乐</small></div>
+        {songId || site.songAudio ? <button data-open-music type="button" aria-label="打开主题曲播放器">▶</button> :
+          <a href="https://music.163.com/#/search/m/?s=%E8%90%A7%E6%B3%BD%20%E5%A5%BD%E5%A5%BD%E7%9D%A1%E8%A7%89%E5%A5%BD%E5%A5%BD%E5%90%83%E9%A5%AD&type=1" target="_blank" rel="noopener" aria-label="在网易云音乐搜索这首歌">↗</a>}
+      </div>
+    </section>
+    <section class="panel visit-calendar" aria-labelledby="visit-heading">
+      <h2 id="visit-heading">访问日历</h2><p class="meta" data-calendar-month></p>
+      <div class="visit-days" data-calendar></div>
+      <p class="meta" data-visit-status role="status">访客统计尚未启用</p>
+    </section></aside>
+    <section aria-labelledby="featured">
+      <div class="section-head"><div><h2 id="featured">精选笔记</h2><span class="section-english" lang="en">Featured notes</span></div><a href="/posts/">全部文章 <NavIcon name="向右" /></a></div>
+      {featured ? <a class="feature" href={`/posts/${featured.id}/`}>
+        {featured.data.cover && <img src={featured.data.cover} alt="" />}
+        <div><div class="feature-meta"><span>{featured.data.category}</span><time datetime={featured.data.date.toISOString().slice(0,10)}><NavIcon name="日历" />{new Intl.DateTimeFormat("zh-CN",{dateStyle:"long",timeZone:"UTC"}).format(featured.data.date)}</time></div><h3>{featured.data.title}</h3><p>{featured.data.description}</p></div>
+      </a> : <p>文章发布后会显示在这里。</p>}
+      <section class="recent" aria-labelledby="recent-heading">
+        <div class="section-head"><div><h2 id="recent-heading">最近书写</h2><span class="section-english" lang="en">Latest stories</span></div><a href="/posts/">全部文章 <NavIcon name="向右" /></a></div>
+        <div class="story-list">{posts.slice(0,4).map(post => <PostCard post={post} />)}</div>
+      </section>
+    </section>
+    <aside class="sidebar" aria-label="站点概览">
+      <section class="sidebar-section stats"><h2>站点统计</h2><dl>{stats.map(([name,count]) => <div><dt><NavIcon name={name === "访客" ? "关于" : name} />{name}</dt><dd data-visit-total={name === "访客" ? "" : undefined}>{count ?? "—"}</dd></div>)}</dl></section>
+      <section class="sidebar-section"><h2>主题漫游</h2>
+        <div class="sidebar-categories">{categories.map(category => <a href={`/posts/?category=${encodeURIComponent(category)}`}>{category}<span>{categoryCount(category)}</span></a>)}</div>
+        <div class="sidebar-tags">{tags.map(tag => <a href={`/posts/?tag=${encodeURIComponent(tag)}`}>#{tag}</a>)}</div>
+      </section>
+      {site.quote && <blockquote class="sidebar-quote">
+        {site.quoteBackground && <img src={site.quoteBackground} alt="" loading="lazy" />}
+        <NavIcon name="月亮" /><p>{site.quote}</p>
+      </blockquote>}
+    </aside>
+  </div>
+  <div class="streams"><div class="wrap stream-grid">
+    {streams.map(stream => <section class="panel stream">
+      <div class="section-head"><div><h2>{stream.title}</h2><span class="section-english" lang="en">{stream.english}</span></div><a href={`/${stream.path}/`}>{stream.label} <NavIcon name="向右" /></a></div>
+      {stream.items.slice().sort((a,b) => b.date.localeCompare(a.date)).slice(0,2).map(item =>
+        <a class="panel stream-item" href={`/${stream.path}/`}><h3>{item.title}</h3><p>{item.description}</p><time class="meta">{item.date}</time></a>)}
+      {!stream.items.length && <p class="meta">暂无内容。</p>}
+    </section>)}
+  </div></div>
+</Layout>

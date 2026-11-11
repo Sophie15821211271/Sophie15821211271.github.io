@@ -1,0 +1,19 @@
+---
+import { getCollection, render } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+export async function getStaticPaths() {
+  const posts = await getCollection("posts", ({data}) => !data.draft);
+  return posts.map(post => ({params: {id: post.id}, props: {post}}));
+}
+const {post} = Astro.props;
+const {Content} = await render(post);
+---
+<Layout title={post.data.title}>
+  <article class="reading wrap">
+    <a class="meta" href="/posts/">← 全部文章</a>
+    <h1>{post.data.title}</h1>
+    <p class="meta">{post.data.category} · {post.data.date.toISOString().slice(0,10)}</p>
+    {post.data.cover && <img class="article-cover" src={post.data.cover} alt="" />}
+    <Content />
+  </article>
+</Layout>

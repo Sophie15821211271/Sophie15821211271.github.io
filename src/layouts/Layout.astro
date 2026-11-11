@@ -1,0 +1,81 @@
+---
+import site from "../site.json";
+import { ClientRouter } from "astro:transitions";
+import NavIcon from "../components/NavIcon.astro";
+import "../style.css";
+const {title = site.title, home = false} = Astro.props;
+const links = [["/","首页"],["/posts/","文章"],["/archive/","归档"],["/moments/","说说"],["/projects/","项目"],["/gallery/","相册"],["/friends/","友链"],["/about/","关于"],["/search/","搜索"]];
+const songId = /^\d+$/.test(site.songId || "") ? site.songId : "";
+---
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={site.description} />
+    <title>{title}</title>
+    <ClientRouter fallback="swap" />
+    <script is:inline defer src="/visits.js"></script>
+  </head>
+  <body class:list={[{home}]} data-visits-endpoint={site.visitsEndpoint}>
+    {!home && site.background && <div class:list={["interior-bg", {"interior-film":site.background === "/media/la-la-land-night.jpg"}]} aria-hidden="true"><img src={site.background} alt="" /></div>}
+    <header class="header"><div class="nav wrap">
+      <a class="brand" href="/"><span aria-hidden="true">✦</span> {site.title}</a>
+      <nav aria-label="主导航">{links.map(([href,label]) => <a href={href} aria-current={Astro.url.pathname === href ? "page" : undefined}><NavIcon name={label} />{label}</a>)}</nav>
+    </div></header>
+    <main><slot /></main>
+    <footer class="wrap">{site.title}<a href="https://app.pagescms.org/">内容管理 ↗</a></footer>
+    {(songId || site.songAudio) && <details id="music-dock">
+      <summary><span aria-hidden="true">♫</span> 主题曲</summary>
+      <div class="dock-controls">
+        {songId ? <>
+          <iframe class="netease-player" title="网易云音乐 · 好好睡觉好好吃饭" data-src={`https://music.163.com/outchain/player?type=2&id=${songId}&auto=0&height=66`} allow="autoplay"></iframe>
+          <a class="music-external" href={`https://music.163.com/song?id=${songId}`} target="_blank" rel="noopener">在网易云音乐播放 ↗</a>
+        </> : <audio controls src={site.songAudio} preload="none"></audio>}
+      </div>
+    </details>}
+  </body>
+</html>
+<script is:inline>
+  (() => {
+    const dock = document.querySelector("#music-dock");
+    if (!dock || dock.dataset.initialized) return;
+    dock.dataset.initialized = "true";
+    function loadPlayer() {
+      if (!dock.open) return;
+      const player = dock.querySelector("iframe[data-src]");
+      if (player && !player.hasAttribute("src")) player.src = player.dataset.src;
+    }
+    dock.addEventListener("toggle", loadPlayer);
+    document.addEventListener("click", event => {
+      if (!(event.target instanceof Element) || !event.target.closest("[data-open-music]")) return;
+      dock.open = true;
+      loadPlayer();
+      dock.querySelector("summary")?.focus();
+    });
+  })();
+</script>
+<script>
+  import { swapFunctions } from "astro:transitions/client";
+
+  document.addEventListener("astro:before-swap", event => {
+    const dock = document.querySelector("#music-dock");
+    const incomingDock = event.newDocument.querySelector("#music-dock");
+    if (!dock || !incomingDock) return;
+
+    event.swap = () => {
+      swapFunctions.deselectScripts(event.newDocument);
+      swapFunctions.swapRootAttributes(event.newDocument);
+      swapFunctions.swapHeadElements(event.newDocument);
+      const restoreFocus = swapFunctions.saveFocus();
+      const body = document.body;
+      body.className = event.newDocument.body.className;
+      incomingDock.remove();
+      // Keep the original iframe attached to the live document throughout the swap.
+      for (const child of [...body.childNodes]) if (child !== dock) child.remove();
+      for (const child of [...event.newDocument.body.childNodes]) body.insertBefore(child, dock);
+      restoreFocus();
+    };
+  });
+
+</script>

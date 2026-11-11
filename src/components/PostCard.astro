@@ -1,0 +1,15 @@
+---
+import NavIcon from "./NavIcon.astro";
+const {post} = Astro.props;
+const {id,data} = post;
+const date = new Intl.DateTimeFormat("zh-CN", {dateStyle:"long", timeZone:"UTC"}).format(data.date);
+---
+<a class="panel story" href={`/posts/${id}/`} data-category={data.category} data-tags={JSON.stringify(data.tags)}>
+  {data.cover && <div class="story-cover"><img src={data.cover} alt="" loading="lazy" /></div>}
+  <div class="story-copy">
+    <div class="story-meta"><span class="chip">{data.category}</span><time datetime={data.date.toISOString().slice(0,10)}><NavIcon name="日历" />{date}</time></div>
+    <h2>{data.title}</h2><p>{data.description}</p>
+    {data.tags.length > 0 && <div class="meta">{data.tags.map((tag:string) => <span>#{tag}　</span>)}</div>}
+  </div>
+  <span class="story-arrow" aria-hidden="true"><NavIcon name="向右" /></span>
+</a>

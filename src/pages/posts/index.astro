@@ -1,0 +1,30 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+import PostCard from "../../components/PostCard.astro";
+const posts = (await getCollection("posts", ({data}) => !data.draft))
+  .sort((a,b) => b.data.date.getTime() - a.data.date.getTime());
+---
+<Layout title="文章">
+  <section class="wrap listing wide"><h1 id="listing-title">文章</h1>
+    <div class="story-list article-grid">{posts.map(post => <PostCard post={post} />)}</div>
+    <p id="no-posts" hidden>这个主题还没有文章。</p>
+  </section>
+</Layout>
+<script is:inline data-astro-rerun>
+(() => {
+  const query = new URLSearchParams(location.search);
+  const category = query.get("category");
+  const tag = query.get("tag");
+  if (category || tag) {
+    document.querySelector("#listing-title").textContent = category || "#" + tag;
+    let count = 0;
+    document.querySelectorAll(".story").forEach(card => {
+      card.hidden = Boolean((category && card.dataset.category !== category) ||
+        (tag && !JSON.parse(card.dataset.tags).includes(tag)));
+      if (!card.hidden) count++;
+    });
+    document.querySelector("#no-posts").hidden = count > 0;
+  }
+})();
+</script>

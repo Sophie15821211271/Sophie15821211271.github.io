@@ -1,0 +1,158 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../layouts/Layout.astro";
+import NavIcon from "../components/NavIcon.astro";
+import site from "../site.json";
+import journal from "../journal.json";
+export function getStaticPaths() {
+  const sections = [["archive","归档"],["moments","说说"],["projects","项目"],["gallery","相册"],["friends","友链"],["about","关于"],["search","搜索"],["topics","全部主题"]];
+  return sections.map(([section,title]) => ({params:{section}, props:{title}}));
+}
+const {section} = Astro.params;
+const {title} = Astro.props;
+const posts = (await getCollection("posts", ({data}) => !data.draft)).sort((a,b) => +b.data.date - +a.data.date);
+const categories = [...new Set(posts.map(post => post.data.category))];
+const tags = [...new Set(posts.flatMap(post => post.data.tags))];
+const entries = section === "projects" ? journal.projects : journal.moments;
+const safeLink = (url:string) => /^https?:\/\//i.test(url);
+const projectLink = (url:string) => safeLink(url) || /^\/posts\/[a-z0-9-]+\/$/i.test(url);
+const chronological = [...posts].reverse();
+const waveY = (x:number) => 54 + 17 * Math.cos(x * Math.PI / 600);
+const waveWidth = Math.max(1, chronological.length * 300);
+const wavePath = Array.from({length:Math.ceil(waveWidth / 10) + 1}, (_, i) => {
+  const x = Math.min(i * 10, waveWidth);
+  return `${i === 0 ? "M" : "L"}${x} ${waveY(x).toFixed(2)}`;
+}).join(" ");
+---
+<Layout title={title}>
+  <section class:list={["wrap listing wide", {"archive-page": section === "archive"}]}>
+    {section !== "archive" && <h1>{title}</h1>}
+    {section === "archive" && <>
+      <header class="archive-heading">
+        <span class="archive-icon"><NavIcon name="归档" /></span>
+        <div><h1>归档</h1><p>沿着时间轨迹回看写作记录。</p></div>
+        <span class="meta">{posts.length} 篇文章</span>
+      </header>
+      <div class="archive-controls"><p class="meta">按住拖动，或用方向键浏览</p><div><button type="button" data-step="-1" aria-label="向左浏览">←</button><button type="button" data-step="1" aria-label="向右浏览">→</button></div></div>
+      {!posts.length && <p>发布文章后，时间线会显示在这里。</p>}
+      <div class="timeline" tabindex="0" aria-label="文章时间线"><div class="timeline-track" style={`--columns:${Math.max(1,chronological.length)}`}>
+        <svg class="timeline-wave" viewBox={`0 0 ${waveWidth} 108`} preserveAspectRatio="none" aria-hidden="true"><path d={wavePath} /></svg>
+        {chronological.map((post,i) => <>
+          <div class:list={["timeline-node",{"node-below":i%2===1}]} style={`--column:${i+1};--node-y:${waveY(i*300+150)}px`}><time>{post.data.date.toISOString().slice(0,10)}</time></div>
+          <a class="panel timeline-card" style={`grid-column:${i+1};grid-row:${i%2===0 ? 1 : 3}`} href={`/posts/${post.id}/`}>
+            {post.data.cover && <div class="story-cover"><img src={post.data.cover} alt="" /></div>}
+            <div class="timeline-copy"><span>{post.data.category}</span><h2>{post.data.title}</h2><p>{post.data.description}</p><span class="timeline-arrow" aria-hidden="true">↗</span></div>
+          </a>
+        </>)}
+      </div></div>
+    </>}
+    {section === "topics" && <div class="panel subsection"><h2>分类</h2><div class="topic-links">{categories.map(category => <a class="chip" href={`/posts/?category=${encodeURIComponent(category)}`}>{category}</a>)}</div><h2>标签</h2><div class="topic-links">{tags.map(tag => <a class="chip" href={`/posts/?tag=${encodeURIComponent(tag)}`}>#{tag}</a>)}</div></div>}
+    {section === "projects" && <><label for="project-search">搜索项目名称或介绍</label><input id="project-search" class="search-input" type="search" /><p id="project-empty" hidden>没有找到符合条件的项目。</p></>}
+    {(section === "moments" || section === "projects") && <div class:list={["story-list", section === "moments" ? "paper-stack" : "project-grid"]}>
+      {entries.slice().sort((a,b) => b.date.localeCompare(a.date)).map(item => <article class:list={["panel subsection", section === "moments" ? "paper-note" : "project-card"]} tabindex={section === "moments" ? 0 : undefined}>
+        {"cover" in item && typeof item.cover === "string" && item.cover && <img class="project-cover" src={item.cover} alt={item.title + "的封面"} />}
+        <h2>{item.title}</h2><p>{item.description}</p><time class="meta">{item.date}</time>
+        {"url" in item && item.url && projectLink(item.url) && <p><a class="project-link" href={item.url}>阅读项目记录 →</a></p>}
+      </article>)}
+      {!entries.length && <p>暂无内容。</p>}
+    </div>}
+    {section === "gallery" && journal.albums.map(album => <section class="panel subsection"><h2>{album.title}</h2><p>{album.description}</p><div class="album-grid">{album.images.map(image => <a href={image}><img src={image} alt={album.title} loading="lazy" /></a>)}</div></section>)}
+    {section === "friends" && <div class="story-list">{journal.friends.length ? journal.friends.map((friend: {title:string;description:string;url:string}) => <article class="panel subsection"><h2>{safeLink(friend.url) ? <a href={friend.url}>{friend.title} ↗</a> : friend.title}</h2><p>{friend.description}</p></article>) : <p class="panel">还没有添加友情链接。</p>}</div>}
+    {section === "about" && <>
+      <div class="profile panel">{site.avatar && <img src={site.avatar} alt={site.name + "的头像"} />}<h2>{site.name}</h2><p>{site.signature}</p><p>{site.description}</p></div>
+      <section class="panel subsection photo-credits">
+        <h2>摄影来源</h2>
+        <ul>
+          <li>首页电影画面 · 《爱乐之城》（La La Land，2016） · <a href="https://images2.alphacoders.com/789/789853.jpg">图片来源</a></li>
+          <li><a href="https://commons.wikimedia.org/wiki/File:Golden_Gate_Bridge_at_dusk,_seen_from_Alcatraz_island,_San_Francisco,_California.jpg">金门大桥暮色</a> · William Warby · <a href="https://creativecommons.org/licenses/by/2.0/">CC BY 2.0</a></li>
+          <li><a href="https://commons.wikimedia.org/wiki/File:Edinburgh_from_Scott_Monument.jpg">爱丁堡全景</a> · Oliver-Bonjoch · <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a></li>
+          <li><a href="https://commons.wikimedia.org/wiki/File:Drei_Zinnen_Tre_Cime_di_Lavaredo_Dolomites.jpg">多洛米蒂三峰</a> · Wolfgang Moroder · <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a></li>
+          <li><a href="https://commons.wikimedia.org/wiki/File:Water_waves_at_sunset.jpg">日落海浪</a> · Marsel Minga · <a href="https://creativecommons.org/publicdomain/zero/1.0/">CC0 1.0</a></li>
+        </ul>
+        <p>照片为网页压缩，部分展示位置按比例裁切。</p>
+      </section>
+    </>}
+    {section === "search" && <>
+      <label for="search-input">搜索标题、摘要、分类或标签</label>
+      <input class="search-input" id="search-input" type="search" />
+      <p id="search-empty" role="status" hidden>没有找到符合条件的文章。</p>
+      <div class="story-list" id="search-results">{posts.map(post => <a class="panel post-row" href={`/posts/${post.id}/`} data-keywords={[post.data.category,...post.data.tags].join(" ")}><h2>{post.data.title}</h2><p>{post.data.description}</p></a>)}</div>
+    </>}
+  </section>
+</Layout>
+{section === "projects" && <script is:inline data-astro-rerun>
+(() => {
+  const input = document.querySelector("#project-search");
+  const cards = [...document.querySelectorAll(".project-card")];
+  function filterProjects() {
+    const query = input.value.trim().toLowerCase();
+    cards.forEach(card => {card.hidden = !card.textContent.toLowerCase().includes(query);});
+    document.querySelector("#project-empty").hidden = cards.some(card => !card.hidden);
+  }
+  input.addEventListener("input", filterProjects);
+  filterProjects();
+})();
+</script>}
+{section === "archive" && <script is:inline data-astro-rerun>
+(() => {
+  const timeline = document.querySelector(".timeline");
+  const arrows = [...document.querySelectorAll(".archive-controls button")];
+  function updateArrows() {
+    arrows[0].disabled = timeline.scrollLeft < 1;
+    arrows[1].disabled = timeline.scrollLeft + timeline.clientWidth >= timeline.scrollWidth - 1;
+  }
+  arrows.forEach(button => button.addEventListener("click", () => {
+    timeline.scrollBy({left: Number(button.dataset.step) * 300,
+      behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
+  }));
+  timeline.addEventListener("scroll", updateArrows, {passive:true});
+  const observer = new ResizeObserver(updateArrows);
+  observer.observe(timeline);
+  document.addEventListener("astro:before-swap", () => observer.disconnect(), {once:true});
+  updateArrows();
+  let start = null;
+  let moved = false;
+  timeline.addEventListener("dragstart", event => event.preventDefault());
+  timeline.addEventListener("pointerdown", event => {
+    if (event.pointerType !== "mouse" || event.button !== 0) return;
+    start = {x: event.clientX, scroll: timeline.scrollLeft};
+    moved = false;
+  });
+  timeline.addEventListener("pointermove", event => {
+    if (!start || !(event.buttons & 1)) return;
+    const delta = event.clientX - start.x;
+    if (!moved && Math.abs(delta) < 5) return;
+    if (!moved) timeline.setPointerCapture(event.pointerId);
+    moved = true;
+    timeline.classList.add("dragging");
+    timeline.scrollLeft = start.scroll - delta;
+  });
+  function endDrag() {start = null; timeline.classList.remove("dragging");}
+  timeline.addEventListener("pointerup", endDrag);
+  timeline.addEventListener("lostpointercapture", endDrag);
+  timeline.addEventListener("pointercancel", endDrag);
+  timeline.addEventListener("click", event => {if (moved) event.preventDefault(); moved = false;}, true);
+  timeline.addEventListener("keydown", event => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    event.preventDefault();
+    timeline.scrollLeft += event.key === "ArrowRight" ? 260 : -260;
+  });
+})();
+</script>}
+{section === "search" && <script is:inline data-astro-rerun>
+(() => {
+  const input = document.querySelector("#search-input");
+  function search() {
+    const words = input.value.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+    let count = 0;
+    document.querySelectorAll("#search-results a").forEach(item => {
+      const haystack = (item.textContent + " " + item.dataset.keywords).toLocaleLowerCase();
+      item.hidden = !words.every(word => haystack.includes(word));
+      if (!item.hidden) count++;
+    });
+    document.querySelector("#search-empty").hidden = count > 0;
+  }
+  input.addEventListener("input", search);
+  search();
+})();
+</script>}
