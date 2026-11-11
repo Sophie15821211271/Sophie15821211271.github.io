@@ -8,7 +8,7 @@ tags:
   - Web Serial
   - 电工实习
 description: 从 PuTTY 里的一句 PONG，到能够读数据、查报警和改阈值的网页控制台。
-cover: /media/jingguan/dashboard.png
+cover: /media/bridge-dusk-1.jpg
 featured: true
 draft: false
 ---
