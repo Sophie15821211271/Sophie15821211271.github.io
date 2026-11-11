@@ -1,0 +1,7 @@
+{
+  "name": "sophie-blog",
+  "private": true,
+  "type": "module",
+  "scripts": {"dev": "astro dev", "build": "astro build"},
+  "dependencies": {"astro": "^6.0.0"}
+}
