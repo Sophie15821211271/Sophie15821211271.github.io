@@ -4,7 +4,7 @@ date: 2026-11-11
 category: 学业笔记
 tags:
   - 示例
-description: 一篇带封面、正文和代码的示例
+description: Example
 cover: /media/edinburgh.jpg
 featured: false
 draft: false
