@@ -2,7 +2,13 @@
 import { getCollection } from "astro:content";
 import Layout from "../layouts/Layout.astro";
 import site from "../site.json";
-import journal from "../journal.json";
+import journalData from "../journal.json";
+const journal = {
+  projects: journalData.projects ?? [],
+  moments: journalData.moments ?? [],
+  albums: journalData.albums ?? [],
+  friends: journalData.friends ?? []
+};
 import PostCard from "../components/PostCard.astro";
 import NavIcon from "../components/NavIcon.astro";
 const posts = (await getCollection("posts", ({data}) => !data.draft))

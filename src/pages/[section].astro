@@ -3,7 +3,13 @@ import { getCollection } from "astro:content";
 import Layout from "../layouts/Layout.astro";
 import NavIcon from "../components/NavIcon.astro";
 import site from "../site.json";
-import journal from "../journal.json";
+import journalData from "../journal.json";
+const journal = {
+  projects: journalData.projects ?? [],
+  moments: journalData.moments ?? [],
+  albums: journalData.albums ?? [],
+  friends: journalData.friends ?? []
+};
 export function getStaticPaths() {
   const sections = [["archive","归档"],["moments","说说"],["projects","项目"],["gallery","相册"],["friends","友链"],["about","关于"],["search","搜索"],["topics","全部主题"]];
   return sections.map(([section,title]) => ({params:{section}, props:{title}}));
@@ -56,7 +62,7 @@ const wavePath = Array.from({length:Math.ceil(waveWidth / 10) + 1}, (_, i) => {
       </article>)}
       {!entries.length && <p>暂无内容。</p>}
     </div>}
-    {section === "gallery" && journal.albums.map(album => <section class="panel subsection"><h2>{album.title}</h2><p>{album.description}</p><div class="album-grid">{album.images.map(image => <a href={image}><img src={image} alt={album.title} loading="lazy" /></a>)}</div></section>)}
+    {section === "gallery" && journal.albums.map(album => <section class="panel subsection"><h2>{album.title}</h2><p>{album.description}</p><div class="album-grid">{(album.images ?? []).map(image => <a href={image}><img src={image} alt={album.title} loading="lazy" /></a>)}</div></section>)}
     {section === "friends" && <div class="story-list">{journal.friends.length ? journal.friends.map((friend: {title:string;description:string;url:string}) => <article class="panel subsection"><h2>{safeLink(friend.url) ? <a href={friend.url}>{friend.title} ↗</a> : friend.title}</h2><p>{friend.description}</p></article>) : <p class="panel">还没有添加友情链接。</p>}</div>}
     {section === "about" && <>
       <div class="profile panel">{site.avatar && <img src={site.avatar} alt={site.name + "的头像"} />}<h2>{site.name}</h2><p>{site.signature}</p><p>{site.description}</p></div>
